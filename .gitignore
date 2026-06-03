@@ -1,0 +1,10 @@
+node_modules/
+.superpowers/
+all_questions.txt
+all_questions_review.txt
+qa_review.txt
+fix_answers.js
+fix_answers_v2.js
+parse_questions.py
+docs/
+*.docx

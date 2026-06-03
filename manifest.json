@@ -1,0 +1,18 @@
+{
+  "name": "文学常识知识巩固",
+  "short_name": "文学常识",
+  "description": "826道中国文学常识题，逐题查证，适合学习巩固",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#1e293b",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%231e293b' width='100' height='100' rx='20'/><text x='50' y='65' text-anchor='middle' fill='%2360a5fa' font-size='50' font-family='serif'>文</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
