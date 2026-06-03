@@ -6,5 +6,6 @@ qa_review.txt
 fix_answers.js
 fix_answers_v2.js
 parse_questions.py
-docs/
+docs/*
+!docs/题库查证模板-CLAUDE.md
 *.docx
