@@ -103,6 +103,32 @@
   .btn-tool:hover { border-color: #94a3b8; color: #94a3b8; }
   #import-file { display: none; }
 
+  /* --- 顶栏 --- */
+  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid #1e293b; }
+  .topbar-title { font-size: 1.15rem; font-weight: 700; color: #f1f5f9; cursor: pointer; }
+  .topbar-actions { display: flex; gap: 0.5rem; }
+  .btn-icon { padding: 0.4rem 0.75rem; border: 1px solid #475569; border-radius: 8px; background: transparent; color: #94a3b8; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; }
+  .btn-icon:hover { border-color: #94a3b8; color: #e2e8f0; }
+  .btn-icon.active { border-color: #60a5fa; color: #60a5fa; background: #1e3a5f; }
+
+  /* --- 错题本 --- */
+  .wrongbook-item { padding: 1rem; border: 1px solid #334155; border-radius: 10px; margin-bottom: 0.75rem; background: #1a2332; }
+  .wrongbook-q { font-size: 1.1rem; font-weight: 600; color: #e2e8f0; margin-bottom: 0.5rem; }
+  .wrongbook-meta { font-size: 0.9rem; color: #94a3b8; line-height: 1.6; }
+  .wrongbook-meta .your { color: #f87171; }
+  .wrongbook-meta .correct { color: #4ade80; }
+  .wrongbook-empty { text-align: center; padding: 3rem; color: #64748b; font-size: 1.1rem; }
+
+  /* --- 设置 --- */
+  .setting-group { margin-bottom: 1.5rem; }
+  .setting-group h3 { font-size: 1rem; color: #94a3b8; margin-bottom: 0.75rem; }
+  .btn-block { width: 100%; padding: 0.75rem; border: 1px solid #475569; border-radius: 10px; background: transparent; color: #e2e8f0; font-size: 1rem; cursor: pointer; text-align: center; margin-bottom: 0.5rem; transition: all 0.2s; }
+  .btn-block:hover { background: #1e293b; }
+  .btn-block.danger { border-color: #991b1b; color: #f87171; }
+  .btn-block.danger:hover { background: #1a0a0a; }
+  .btn-block.primary { border-color: #2563eb; color: #60a5fa; }
+  .btn-block.primary:hover { background: #1e3a5f; }
+
 </style>
 </head>
 <body>
@@ -9252,6 +9278,7 @@ function init() {
     ALL_QUESTIONS.push(EMBEDDED_QUESTIONS[i]);
   }
 
+  currentView = 'quiz';
   APP_DATA = loadData();
   var today = todayStr();
 
@@ -9317,6 +9344,7 @@ function startNewBatch() {
 
   if (currentBatch.length === 0) {
     document.getElementById('app').innerHTML =
+      renderTopBar(false) +
       '<div class="card" style="text-align:center;padding:3rem;"><p style="font-size:1.5rem;color:#94a3b8;">暂无可做题目</p><p class="hint-text" style="margin-top:0.5rem;">所有题目已完成，等待错题复习到期后再来。</p></div>';
     return;
   }
@@ -9351,6 +9379,7 @@ function renderQuestion() {
   }
 
   document.getElementById('app').innerHTML =
+    renderTopBar(false) +
     '<div class="progress-bar-wrap">' +
       '<div class="progress-info">' +
         '<span>第 ' + (currentIndex + 1) + ' / ' + currentBatch.length + ' 题</span>' +
@@ -9549,6 +9578,7 @@ function showCompletionPage() {
   var tomorrowReviews = APP_DATA.wrong_book.filter(function(w) { return w.next_review === addDays(today, 1); });
 
   document.getElementById('app').innerHTML =
+    renderTopBar(false) +
     '<div class="card" style="padding:2rem;">' +
       '<div class="page-title">今日答题完成</div>' +
       '<div class="page-subtitle">' + today + '</div>' +
@@ -9696,6 +9726,108 @@ function importData(event) {
   };
   reader.readAsText(file);
   event.target.value = '';
+}
+
+// ==================== 顶栏 ====================
+function renderTopBar(showBack) {
+  var backBtn = showBack
+    ? '<button class="btn-icon" onclick="backToMain()" style="margin-right:0.25rem">← 返回</button>'
+    : '';
+  return '<div class="topbar">' +
+    '<span class="topbar-title" onclick="backToMain()">📚 文学常识</span>' +
+    '<div class="topbar-actions">' +
+      backBtn +
+      '<button class="btn-icon' + (currentView === 'wrongbook' ? ' active' : '') + '" onclick="showWrongBookView()">❌ 错题本</button>' +
+      '<button class="btn-icon' + (currentView === 'settings' ? ' active' : '') + '" onclick="showSettingsView()">⚙️ 设置</button>' +
+    '</div></div>';
+}
+
+var currentView = 'quiz'; // quiz | wrongbook | settings
+
+function backToMain() {
+  currentView = 'quiz';
+  if (currentBatch.length > 0 && currentIndex < currentBatch.length) {
+    renderQuestion();
+  } else if (APP_DATA.completed_days[todayStr()]) {
+    showCompletionPage();
+  } else {
+    startNewBatch();
+  }
+}
+
+// ==================== 错题本页面 ====================
+function showWrongBookView() {
+  currentView = 'wrongbook';
+  var topbar = renderTopBar(false);
+  var wrongIds = APP_DATA.wrong_book.map(function(w) { return w.id; });
+
+  if (wrongIds.length === 0) {
+    document.getElementById('app').innerHTML = topbar + '<div class="wrongbook-empty">🎉 暂无错题！</div>';
+    return;
+  }
+
+  var html = topbar + '<div class="page-title" style="font-size:1.4rem">错题本</div>' +
+    '<div class="page-subtitle">共 ' + wrongIds.length + ' 道待复习错题</div>';
+
+  for (var i = 0; i < wrongIds.length; i++) {
+    var q = ALL_QUESTIONS.find(function(qq) { return qq.id === wrongIds[i]; });
+    if (!q) continue;
+    var entry = APP_DATA.wrong_book.find(function(w) { return w.id === q.id; });
+    var stageLabel = ['', '🔴 第1次', '🟡 第2次', '🟢 第3次'][entry ? entry.stage : 1];
+    var nextReview = entry ? entry.next_review : '';
+    html += '<div class="wrongbook-item">' +
+      '<div class="wrongbook-q">' + escapeHtml(q.question) + '</div>' +
+      '<div class="wrongbook-meta">' +
+        '<span class="correct">✅ 正确答案：' + q.answer + '. ' + escapeHtml((q.options[q.answer.charCodeAt(0)-65] || '').substring(3)) + '</span><br>' +
+        '<span>' + escapeHtml(q.explanation || '') + '</span><br>' +
+        '<span style="font-size:0.8rem;color:#64748b">' + stageLabel + ' · 下次复习：' + nextReview + '</span>' +
+      '</div></div>';
+  }
+
+  document.getElementById('app').innerHTML = html;
+}
+
+// ==================== 设置页面 ====================
+function showSettingsView() {
+  currentView = 'settings';
+  var topbar = renderTopBar(false);
+  var total = Object.keys(APP_DATA.completed_days).length;
+
+  document.getElementById('app').innerHTML = topbar +
+    '<div class="page-title" style="font-size:1.4rem">⚙️ 设置</div>' +
+    '<div class="page-subtitle">累计 ' + total + ' 天有答题记录</div>' +
+    '<div class="card">' +
+      '<div class="setting-group">' +
+        '<h3>📤 数据导出</h3>' +
+        '<p class="hint-text" style="margin-bottom:0.5rem">备份答题进度到文件</p>' +
+        '<button class="btn-block primary" onclick="exportData()">导出进度 (.json)</button>' +
+      '</div>' +
+      '<div class="setting-group">' +
+        '<h3>📥 数据导入</h3>' +
+        '<p class="hint-text" style="margin-bottom:0.5rem">从备份文件恢复进度</p>' +
+        '<input type="file" id="import-file" onchange="importData(event)" accept=".json">' +
+        '<button class="btn-block primary" onclick="document.getElementById(\'import-file\').click()">导入进度</button>' +
+      '</div>' +
+      '<div class="setting-group">' +
+        '<h3>🗑️ 清除数据</h3>' +
+        '<p class="hint-text" style="margin-bottom:0.5rem">重置所有答题进度和错题记录</p>' +
+        '<button class="btn-block danger" onclick="clearAllData()">清除全部数据</button>' +
+      '</div>' +
+    '</div>';
+}
+
+function clearAllData() {
+  if (confirm('确定要清除全部答题进度吗？\n\n这将删除：\n- 所有答题记录\n- 错题本\n- 每日统计\n\n此操作不可恢复！')) {
+    localStorage.removeItem('lit_quiz');
+    APP_DATA = loadData();
+    ALL_QUESTIONS = [];
+    answeredStates = [];
+    currentBatch = [];
+    currentIndex = 0;
+    batchStats = { correct: 0, wrong: 0 };
+    currentView = 'quiz';
+    init();
+  }
 }
 
 // ==================== 启动 ====================
