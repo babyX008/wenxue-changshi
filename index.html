@@ -9208,7 +9208,7 @@ var currentBatch = [];
 var currentIndex = 0;
 var batchStats = { correct: 0, wrong: 0 };
 var APP_DATA = null;
-var answeredStates = {};
+var answeredStates = [];
 var todayCompletedFirstBatch = false;
 
 // ==================== 日期工具 ====================
@@ -9487,7 +9487,8 @@ function updateProgress(q, isCorrect) {
     date: today,
     batch: currentBatch,
     index: currentIndex,
-    stats: { correct: batchStats.correct, wrong: batchStats.wrong }
+    stats: { correct: batchStats.correct, wrong: batchStats.wrong },
+    answered: answeredStates.slice()
   };
 
   saveData(APP_DATA);
@@ -9497,18 +9498,22 @@ function updateProgress(q, isCorrect) {
 function prevQuestion() {
   if (currentIndex > 0) {
     currentIndex--;
+    if (APP_DATA.session) APP_DATA.session.index = currentIndex;
+    saveData(APP_DATA);
     renderQuestion();
   }
 }
 
 function nextQuestion() {
   currentIndex++;
+  if (APP_DATA.session) APP_DATA.session.index = currentIndex;
   if (currentIndex >= currentBatch.length) {
     APP_DATA.session = null;
     saveData(APP_DATA);
     showCompletionPage();
     return;
   }
+  saveData(APP_DATA);
   renderQuestion();
 }
 
@@ -9590,7 +9595,7 @@ function continuePractice() {
     return;
   }
 
-  answeredStates = {};
+  answeredStates = [];
   currentBatch = selected;
   currentIndex = 0;
   batchStats = { correct: 0, wrong: 0 };
@@ -9628,7 +9633,7 @@ function reviewWrongHistory() {
     selected[j] = t;
   }
 
-  answeredStates = {};
+  answeredStates = [];
   currentBatch = selected;
   currentIndex = 0;
   batchStats = { correct: 0, wrong: 0 };
@@ -9645,6 +9650,7 @@ function resumeSession() {
   currentBatch = s.batch;
   currentIndex = s.index;
   batchStats = s.stats;
+  answeredStates = s.answered || [];
 
   if (currentIndex >= currentBatch.length) {
     APP_DATA.session = null;
