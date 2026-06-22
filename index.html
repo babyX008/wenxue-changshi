@@ -129,14 +129,60 @@
   .btn-block.primary { border-color: #2563eb; color: #60a5fa; }
   .btn-block.primary:hover { background: #1e3a5f; }
 
+.pw-overlay { position:fixed; inset:0; z-index:99999; background:#0f172a; display:flex; justify-content:center; align-items:center; flex-direction:column; }
+.pw-box { text-align:center; }
+.pw-box h1 { font-size:3rem; margin-bottom:0.5rem; }
+.pw-box .pw-hint { color:#94a3b8; margin-bottom:1.5rem; font-size:1rem; }
+.pw-box input { font-size:1.5rem; padding:0.75rem 1.5rem; border-radius:12px; border:2px solid #475569; background:#1e293b; color:#e2e8f0; text-align:center; width:220px; }
+.pw-box input:focus { outline:none; border-color:#60a5fa; }
+.pw-box button { margin-top:1rem; font-size:1.2rem; padding:0.6rem 2.5rem; border-radius:10px; border:none; background:#60a5fa; color:#0f172a; font-weight:700; cursor:pointer; }
+.pw-error { color:#f87171; margin-top:0.75rem; display:none; font-size:0.95rem; }
+@keyframes pw-shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+.pw-shake { animation:pw-shake 0.3s ease; }
+
 </style>
 </head>
 <body>
+
+<div class="pw-overlay" id="pw-overlay">
+  <div class="pw-box" id="pw-box">
+    <h1>🔐</h1>
+    <p class="pw-hint">请输入访问密码</p>
+    <input type="password" id="pw-input" placeholder="密码" autofocus>
+    <button id="pw-btn" style="display:block;margin:1rem auto 0">进入</button>
+    <p class="pw-error" id="pw-error">密码错误，请重试</p>
+  </div>
+</div>
 <div class="container" id="app">
   <div class="loading">加载题库中...</div>
 </div>
 
 <script>
+(function(){
+  var PW='johnny';
+  if(localStorage.getItem('_pw_ok')===PW){return;}
+  var ov=document.getElementById('pw-overlay');
+  var inp=document.getElementById('pw-input');
+  var err=document.getElementById('pw-error');
+  var box=document.getElementById('pw-box');
+  if(!ov)return;
+  ov.style.display='flex';
+  function check(){
+    if(inp.value===PW){
+      localStorage.setItem('_pw_ok',PW);
+      ov.style.display='none';
+    }else{
+      err.style.display='block';
+      box.classList.add('pw-shake');
+      inp.value='';
+      inp.focus();
+      setTimeout(function(){box.classList.remove('pw-shake');},300);
+    }
+  }
+  document.getElementById('pw-btn').addEventListener('click',check);
+  inp.addEventListener('keydown',function(e){if(e.key==='Enter')check();});
+})();
+
 // 内嵌题库数据
 var EMBEDDED_QUESTIONS = [
   {
